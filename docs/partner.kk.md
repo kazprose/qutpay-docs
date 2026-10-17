@@ -1,0 +1,24 @@
+# Реферал және Partner API
+
+## Реферал (әр мерчантқа)
+- Кабинет → **Серіктестік** → жеке код және сілтеме `https://qut.kz/app/login?ref=КОД`.
+- Сол сілтемемен тіркелген мерчанттың бірінші ұйымы сізге «жабысады» (`referred_by`).
+- Ол тариф төлеген сайын сомадан **20 %** (`REFERRAL_PERCENT`) сізге есептеледі (`referral_earnings`, күйі `accrued`).
+- Төлемді платформа қолмен жасайды: Платформа → Сыйақылар → «Төленді» (`paid_out`).
+
+## Partner API (интеграторлар, веб-студиялар, франшизалар)
+Шарт: ұйым **«Серіктес»** тарифінде (платформа қояды) және API кілтінде `partner:manage` scope бар.
+
+| Әдіс | Не істейді |
+|---|---|
+| `POST /api/v1/partner/organizations` `{name, ownerPhone, ownerName?, legalName?, idn?}` | Клиентке ұйым ашады: иесінің аккаунты (болмаса жасалады), sandbox + 7 күн сынақ, серіктес иесі `developer` мүше, жауапта `apiKey` (бір рет) |
+| `GET /api/v1/partner/organizations` | Клиенттер тізімі: режим, тариф, төлем статистикасы, белсенді Kaspi байланыстары |
+| `GET /api/v1/partner/organizations/{id}` | Ұйым + байланыстар |
+| `POST …/{id}/connections` → `…/{cid}/kaspi/init` → `send-phone {processId, phone}` → `verify-otp {processId, otp}` | Клиенттің Kaspi кассирін қосу (SMS коды кассирдің телефонына келеді) |
+| `POST …/{id}/mode {mode: 'live'}` | Live режимге өткізу (белсенді байланыс керек) |
+| `POST …/{id}/api-keys {name, scopes?}` | Клиентке жаңа кілт |
+| `GET /api/v1/partner/earnings` | Реферал коды, клиенттер, есептелген сыйақы |
+
+Клиенттің өз счёттарын серіктес **клиенттің кілтімен** басқарады (`/api/v1/invoices`), немесе кабинетке кіріп (developer рөлі) көреді.
+
+Толық сипаттама: https://api.qut.kz/docs (Partner тегі).

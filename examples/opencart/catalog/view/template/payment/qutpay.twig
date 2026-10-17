@@ -1,0 +1,36 @@
+<div class="alert alert-info">
+  <p><b>{{ text_title }}</b></p>
+  <p>{{ text_description }}</p>
+  <p class="mb-0">{{ text_redirect }}</p>
+</div>
+<div class="text-end">
+  <button type="button" id="button-confirm" class="btn btn-primary">{{ button_confirm }}</button>
+</div>
+<script type="text/javascript"><!--
+$('#button-confirm').on('click', function () {
+    $.ajax({
+        url: '{{ confirm }}',
+        type: 'post',
+        cache: false,
+        dataType: 'json',
+        beforeSend: function () {
+            $('#button-confirm').button('loading');
+        },
+        complete: function () {
+            $('#button-confirm').button('reset');
+        },
+        success: function (json) {
+            if (json['error']) {
+                $('#alert').prepend('<div class="alert alert-danger alert-dismissible"><i class="fa-solid fa-circle-exclamation"></i> ' + json['error'] + ' <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>');
+            }
+
+            if (json['redirect']) {
+                location = json['redirect'];
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            console.log(thrownError + "\r\n" + xhr.statusText + "\r\n" + xhr.responseText);
+        }
+    });
+});
+//--></script>

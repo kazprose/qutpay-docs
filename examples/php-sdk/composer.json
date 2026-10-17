@@ -1,0 +1,8 @@
+{
+  "name": "qutpay/sdk",
+  "description": "Qut Pay клиенті: Kaspi QR счёттары, webhook қолтаңбасын тексеру",
+  "type": "library",
+  "license": "MIT",
+  "require": { "php": ">=7.4", "ext-curl": "*", "ext-json": "*" },
+  "autoload": { "psr-4": { "QutPay\\": "src/" }, "files": ["src/QutPay.php"] }
+}

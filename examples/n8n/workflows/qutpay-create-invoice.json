@@ -1,0 +1,201 @@
+{
+  "name": "Qut Pay — создать счёт",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Qut Pay — создать счёт\n\nВходящий POST на `/webhook/qutpay-order` → счёт в Qut Pay → ответ `{ id, payUrl, … }`.\n\n**Тело запроса (JSON):**\n```\n{ \"amount\": 2500, \"description\": \"Заказ 1001\",\n  \"externalOrderId\": \"1001\",\n  \"customer\": { \"name\": \"…\", \"phone\": \"+7701…\", \"email\": \"a@b.kz\" },\n  \"successUrl\": \"https://site.kz/ok\", \"failUrl\": \"https://site.kz/fail\",\n  \"metadata\": { \"any\": \"json\" } }\n```\n\n**Перед запуском:** создайте credential *Header Auth* с именем **Qut Pay API key** (Name = `X-API-Key`, Value = ваш `qp_live_…` / `qp_test_…`) и выберите его в узле «Qut Pay: создать счёт».\n\nПодробнее — README.md в packages/n8n-qutpay.",
+        "height": 420,
+        "width": 480
+      },
+      "id": "3b7d1a6e-0d7f-4a4b-9c1e-1f0c9a2b7e01",
+      "name": "Описание",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-20, -480]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "qutpay-order",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "8f2c4d11-6a1b-4e2d-9a3c-0b5e7f9d1a02",
+      "name": "Webhook: заказ с сайта",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "b61e9c4a-3f2d-4c8e-a7b1-9d0e2f4c6a03"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1d3e5f7-0001-4b6c-8d9e-1f2a3b4c5d01",
+              "name": "amount",
+              "value": "={{ Number($json.body.amount) }}",
+              "type": "number"
+            },
+            {
+              "id": "a1d3e5f7-0002-4b6c-8d9e-1f2a3b4c5d02",
+              "name": "description",
+              "value": "={{ String($json.body.description || ('Заказ ' + ($json.body.externalOrderId || ''))).slice(0, 100) }}",
+              "type": "string"
+            },
+            {
+              "id": "a1d3e5f7-0003-4b6c-8d9e-1f2a3b4c5d03",
+              "name": "externalOrderId",
+              "value": "={{ String($json.body.externalOrderId || $json.body.orderId || '') }}",
+              "type": "string"
+            },
+            {
+              "id": "a1d3e5f7-0004-4b6c-8d9e-1f2a3b4c5d04",
+              "name": "customerName",
+              "value": "={{ $json.body.customer?.name || $json.body.name || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "a1d3e5f7-0005-4b6c-8d9e-1f2a3b4c5d05",
+              "name": "customerPhone",
+              "value": "={{ $json.body.customer?.phone || $json.body.phone || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "a1d3e5f7-0006-4b6c-8d9e-1f2a3b4c5d06",
+              "name": "customerEmail",
+              "value": "={{ $json.body.customer?.email || $json.body.email || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "a1d3e5f7-0007-4b6c-8d9e-1f2a3b4c5d07",
+              "name": "successUrl",
+              "value": "={{ $json.body.successUrl || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "a1d3e5f7-0008-4b6c-8d9e-1f2a3b4c5d08",
+              "name": "failUrl",
+              "value": "={{ $json.body.failUrl || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "a1d3e5f7-0009-4b6c-8d9e-1f2a3b4c5d09",
+              "name": "metadata",
+              "value": "={{ $json.body.metadata || {} }}",
+              "type": "object"
+            },
+            {
+              "id": "a1d3e5f7-0010-4b6c-8d9e-1f2a3b4c5d10",
+              "name": "idempotencyKey",
+              "value": "={{ $json.body.idempotencyKey || ($json.body.externalOrderId ? 'n8n-' + $json.body.externalOrderId : 'n8n-' + $execution.id) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "id": "c4e6a8b0-2d4f-4a6c-8e0b-3d5f7a9c1e04",
+      "name": "Поля счёта",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [240, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.qut.kz/api/v1/invoices",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Idempotency-Key",
+              "value": "={{ $json.idempotencyKey }}"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  amount: $json.amount,\n  description: $json.description || undefined,\n  externalOrderId: $json.externalOrderId || undefined,\n  customer: ($json.customerName || $json.customerPhone || $json.customerEmail)\n    ? { name: $json.customerName || undefined, phone: $json.customerPhone || undefined, email: $json.customerEmail || undefined }\n    : undefined,\n  successUrl: $json.successUrl || undefined,\n  failUrl: $json.failUrl || undefined,\n  metadata: Object.assign({ source: 'n8n' }, $json.metadata || {})\n}) }}",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "id": "d5f7b9c1-3e5a-4b7d-9f1c-4e6a8b0d2f05",
+      "name": "Qut Pay: создать счёт",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Qut Pay API key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({\n  id: $json.id,\n  status: $json.status,\n  payUrl: $json.payUrl,\n  qrUrl: $json.qrUrl,\n  deepLink: $json.deepLink,\n  expiresAt: $json.expiresAt\n}) }}",
+        "options": {
+          "responseCode": 201
+        }
+      },
+      "id": "e6a8c0d2-4f6b-4c8e-a02d-5f7b9c1e3a06",
+      "name": "Ответ: ссылка на оплату",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [720, 0]
+    }
+  ],
+  "connections": {
+    "Webhook: заказ с сайта": {
+      "main": [
+        [
+          {
+            "node": "Поля счёта",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Поля счёта": {
+      "main": [
+        [
+          {
+            "node": "Qut Pay: создать счёт",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qut Pay: создать счёт": {
+      "main": [
+        [
+          {
+            "node": "Ответ: ссылка на оплату",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "tags": [],
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

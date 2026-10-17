@@ -1,0 +1,39 @@
+{{ header }}
+<div id="qutpay-return" class="container">
+  <ul class="breadcrumb">
+    {% for breadcrumb in breadcrumbs %}
+      <li class="breadcrumb-item"><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
+    {% endfor %}
+  </ul>
+  <div class="row">{{ column_left }}
+    {% if column_left and column_right %}
+      {% set class = 'col-md-6' %}
+    {% elseif column_left or column_right %}
+      {% set class = 'col-md-9' %}
+    {% else %}
+      {% set class = 'col-md-12' %}
+    {% endif %}
+    <div id="content" class="{{ class }}">{{ content_top }}
+      <h1>{{ heading_title }}</h1>
+      <p>{{ text_order_number }} <b>{{ order_id }}</b></p>
+      <div class="alert {% if status == 'pending' %}alert-warning{% else %}alert-danger{% endif %}">{{ text_message }}</div>
+      <div class="d-flex flex-wrap gap-2">
+        {% if pay_url %}
+          <a href="{{ pay_url|e }}" class="btn btn-primary">{{ button_pay }}</a>
+        {% endif %}
+        <a href="{{ refresh }}" class="btn btn-light">{{ button_refresh }}</a>
+        <a href="{{ checkout }}" class="btn btn-light">{{ button_checkout }}</a>
+        <a href="{{ home }}" class="btn btn-link">{{ button_home }}</a>
+      </div>
+      {{ content_bottom }}</div>
+    {{ column_right }}</div>
+</div>
+{% if status == 'pending' %}
+<script type="text/javascript"><!--
+// Give the webhook a moment, then ask the store to re-check the payment.
+setTimeout(function () {
+    location.href = '{{ refresh }}';
+}, 8000);
+//--></script>
+{% endif %}
+{{ footer }}
