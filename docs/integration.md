@@ -1,6 +1,6 @@
 # Qut Pay — integration guide for AI coding agents
 
-Knowledge base (merchant-facing answers, Kazakh and Russian): https://api.qut.kz/kb · machine-readable index with every article and its .md URL: https://api.qut.kz/kb/index.json · everything in one file: https://api.qut.kz/llms-full.txt
+Public docs, OpenAPI and examples on GitHub: https://github.com/kazprose/qutpay-docs · Knowledge base (merchant-facing answers, Kazakh and Russian): https://api.qut.kz/kb · machine-readable index with every article and its .md URL: https://api.qut.kz/kb/index.json · everything in one file: https://api.qut.kz/llms-full.txt
 
 > Скопируйте этот текст целиком в ChatGPT / Claude / Cursor / Copilot / Codex вместе с задачей «Подключи оплату через Kaspi (Qut Pay) к моему проекту». Агент получит всё необходимое. Ключ API и секрет webhook вставьте сами в переменные окружения — никогда не отправляйте их в чат с ИИ.
 > Осы мәтінді толығымен ЖИ-агентке көшіріп, «Жобама Qut Pay арқылы Kaspi төлемін қос» деп тапсырма беріңіз. API кілті мен webhook құпиясын чатқа жазбаңыз — тек .env файлына қойыңыз.
@@ -10,6 +10,7 @@ You are integrating **Qut Pay** — a service that lets a Kazakhstan business ac
 ## 0. Facts
 
 - Base URL: `https://api.qut.kz/api/v1` (JSON, UTF-8, TLS only)
+- Pricing: flat monthly subscription, no percentage of payments taken by the platform — Старт 4 990 ₸/month for 800 invoices (burst up to 200/day), Бизнес 14 900 ₸ for 4 000, Про 39 900 ₸ for 15 000; 7-day free trial that starts with the first live invoice. Kaspi's own QR fee (0,95 %) is charged by Kaspi separately, as without any service. Details: https://qut.kz/ru/tarify/ (kk: https://qut.kz/tarifter/)
 - Auth: header `X-API-Key: <key>` (alternatively `Authorization: Bearer <key>`). Keys start with `qp_live_` (real payments) or `qp_test_` (sandbox). **Server-side only** — never ship the key to a browser or mobile app.
 - Currency: KZT only. Amounts are decimal numbers (`2500`, `1500.5`), max 2 decimals. Invoices pushed to a phone (`kind: "phone"`) must be whole tenge.
 - Merchant cabinet: `https://qut.kz/app/` (create API keys, webhook endpoints, switch sandbox ↔ live, see invoices).
