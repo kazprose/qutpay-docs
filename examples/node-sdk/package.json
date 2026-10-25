@@ -1,7 +1,7 @@
 {
   "name": "@qutpay/sdk",
   "version": "0.1.0",
-  "description": "Qut Pay клиенті: тапсырыс жасау, webhook қолтаңбасын тексеру (Node.js 18+)",
+  "description": "Qut Pay client for Node.js 18+: create Kaspi QR invoices, check status, refund, verify webhook signatures (Kazakhstan). Клиент Qut Pay: счета Kaspi, webhook.",
   "type": "module",
   "main": "index.js",
   "exports": {
@@ -10,5 +10,26 @@
   "license": "MIT",
   "engines": {
     "node": ">=18"
+  },
+  "keywords": [
+    "kaspi",
+    "kaspi-pay",
+    "qr",
+    "payments",
+    "kazakhstan",
+    "qutpay",
+    "webhook"
+  ],
+  "homepage": "https://qut.kz",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kazprose/qutpay-docs"
+  },
+  "files": [
+    "index.js",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.js"
   }
 }

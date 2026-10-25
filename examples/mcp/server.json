@@ -1,0 +1,41 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "kz.qut/mcp",
+  "description": "Kaspi QR payments (Kazakhstan) via Qut Pay: create invoices, check status, refund, sandbox tests.",
+  "title": "Qut Pay (Kaspi QR payments)",
+  "repository": {
+    "url": "https://github.com/kazprose/qutpay-docs",
+    "source": "github",
+    "subfolder": "examples/mcp"
+  },
+  "version": "0.1.1",
+  "websiteUrl": "https://api.qut.kz/docs/guide/en/mcp",
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "@qutpay/mcp",
+      "version": "0.1.1",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "QUTPAY_API_KEY",
+          "description": "Qut Pay API key (qp_test_\u2026 sandbox or qp_live_\u2026), from the cabinet \u2192 Integrations \u2192 API keys",
+          "isRequired": true,
+          "isSecret": true,
+          "format": "string"
+        },
+        {
+          "name": "QUTPAY_BASE_URL",
+          "description": "API base URL, default https://api.qut.kz",
+          "isRequired": false,
+          "isSecret": false,
+          "format": "string",
+          "default": "https://api.qut.kz"
+        }
+      ]
+    }
+  ]
+}

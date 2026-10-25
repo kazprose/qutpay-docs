@@ -12,7 +12,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
-export const VERSION = '0.1.0';
+export const VERSION = '0.1.1';
 const DEFAULT_BASE = 'https://api.qut.kz';
 const SECRET_RE = /\b(qp_(?:live|test)_[A-Za-z0-9_-]{6,}|whsec_[A-Za-z0-9_-]{6,})\b/g;
 
