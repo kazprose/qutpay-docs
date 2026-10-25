@@ -10,18 +10,19 @@ You are integrating **Qut Pay** — a service that lets a Kazakhstan business ac
 ## 0. Facts
 
 - Base URL: `https://api.qut.kz/api/v1` (JSON, UTF-8, TLS only)
-- Pricing: flat monthly subscription, no percentage of payments taken by the platform — Старт 4 990 ₸/month for 800 invoices (burst up to 200/day), Бизнес 14 900 ₸ for 4 000, Про 39 900 ₸ for 15 000; 7-day free trial that starts with the first live invoice. Kaspi's own QR fee (0,95 %) is charged by Kaspi separately, as without any service. Details: https://qut.kz/ru/tarify/ (kk: https://qut.kz/tarifter/)
+- Pricing: flat monthly subscription, no percentage of payments taken by the platform — Старт 4 990 ₸/month for 800 invoices (burst up to 200/day), Бизнес 14 900 ₸ for 4 000, Про 39 900 ₸ for 15 000, Серіктес (Partner) 79 900 ₸ for 30 000 invoices plus the Partner API (enabled by the platform on request, then paid from the cabinet's Partnership page); 7-day free trial that starts with the first live invoice. Kaspi's own QR fee (0,95 %) is charged by Kaspi separately, as without any service. Details: https://qut.kz/tarify/ (kk: https://qut.kz/kk/tarifter/)
 - Auth: header `X-API-Key: <key>` (alternatively `Authorization: Bearer <key>`). Keys start with `qp_live_` (real payments) or `qp_test_` (sandbox). **Server-side only** — never ship the key to a browser or mobile app.
 - Currency: KZT only. Amounts are decimal numbers (`2500`, `1500.5`), max 2 decimals. Invoices pushed to a phone (`kind: "phone"`) must be whole tenge.
 - Merchant cabinet: `https://qut.kz/app/` (create API keys, webhook endpoints, switch sandbox ↔ live, see invoices).
 - Full OpenAPI: `https://api.qut.kz/openapi.json` · human docs: `https://api.qut.kz/docs/guide/integration`
+- Trust & reliability: public status page with uptime and response-time history measured by an independent monitor (Upptime on GitHub Actions, every 5 minutes, history committed to an open repository): `https://qut.kz/status` (source: https://github.com/kazprose/qutpay-status). Trust center with security measures, backups, the Kaspi dependency and what is *not* guaranteed: `https://qut.kz/en/trust/` (ru: `https://qut.kz/trust/`). Liveness check without a key: `GET https://api.qut.kz/health` → `{"status":"ok"}`. Qut Pay is an independent service, not a Kaspi partner; no contractual SLA; security measures are described openly in the docs (HMAC-SHA256 webhooks, encrypted cashier sessions, servers in Kazakhstan). No independent security audit has been performed yet.
 - Environment variables to prepare in the merchant's project:
   ```
-  QUTPAY_API_KEY={{API_KEY}}
-  QUTPAY_WEBHOOK_SECRET={{WEBHOOK_SECRET}}
+  QUTPAY_API_KEY=qp_live_…  (create in the cabinet → Integrations → API keys; keep it in .env only)
+  QUTPAY_WEBHOOK_SECRET=whsec_…  (cabinet → Integrations → Webhook)
   QUTPAY_BASE_URL=https://api.qut.kz/api/v1
   ```
-- Current merchant context (filled by the cabinet when copied from there): organization **{{ORG_NAME}}**, mode **{{MODE}}**.
+- Current merchant context (filled by the cabinet when copied from there): organization **<your organization>**, mode **sandbox until you switch to live in the cabinet**.
 
 ## 1. Create an invoice
 

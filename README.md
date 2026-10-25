@@ -24,7 +24,12 @@ When the customer pays, `POST` to your webhook URL with header `X-Qutpay-Signatu
 Keys starting with `qp_test_` create invoices that never reach Kaspi and never move money; everything else (webhooks, refunds, receipts) behaves as in live mode. Switch to `qp_live_` when the integration is done.
 
 ## Pricing
-Flat monthly subscription from 4 990 ₸ for 800 invoices a month; 7-day trial that starts with your first live invoice. The platform charges no percentage on payments; Kaspi's own fee for QR acquiring applies as it would without any service. Details: https://qut.kz/ru/tarify/
+Flat monthly subscription: Старт 4 990 ₸ for 800 invoices a month, Бизнес 14 900 ₸ for 4 000, Про 39 900 ₸ for 15 000, Партнёр 79 900 ₸ for 30 000 plus the Partner API (enabled by the platform on request). 7-day trial that starts with your first live invoice. The platform charges no percentage on payments; Kaspi's own fee for QR acquiring applies as it would without any service. Details: https://qut.kz/tarify/ (kk: https://qut.kz/kk/tarifter/)
+
+## Trust & reliability
+- Public status page, measured by an independent monitor every 5 minutes with the history in an open repository: https://status.qut.kz (source: https://github.com/kazprose/qutpay-status)
+- Trust center — security measures, backups, the Kaspi dependency, what is not guaranteed (no independent audit yet, no contractual SLA): https://qut.kz/en/trust/ (ru: https://qut.kz/trust/, kk: https://qut.kz/kk/trust/); the same text is in [`docs/trust.en.md`](docs/trust.en.md)
+- Liveness check without a key: `GET https://api.qut.kz/health`
 
 ## About
 Qut Pay is an independent service and is not affiliated with JSC "Kaspi Bank". Kaspi and Kaspi Pay are trademarks of their owner. Access is limited to what the Cashier role allows (issue an invoice, see its status, refund your own invoice) and can be revoked from the cabinet at any time.
@@ -34,7 +39,8 @@ Questions: kazprose@gmail.com · WhatsApp +7 778 881 3333 · Telegram @qutpaybot
 ## Languages
 
 - English: this README and `docs/integration.md` (written for people and for AI coding agents alike)
-- Русский: `docs/connect.ru.md`, `docs/integration.ru.md`, tariffs at https://qut.kz/ru/tarify/
+- Русский: `docs/connect.ru.md`, `docs/integration.ru.md`, `docs/tariffs.ru.md`, `docs/partner.ru.md`, `docs/trust.ru.md`; tariffs at https://qut.kz/tarify/
+- English: `docs/integration.en.md`, `docs/connect.en.md`, `docs/tariffs-guide.en.md`, `docs/partner.en.md`, `docs/trust.en.md`
 - Қазақша: `docs/connect.kk.md`, `docs/integration.kk.md`, тарифтер: https://qut.kz/tarifter/
 - Knowledge base, 126 articles in both languages: https://api.qut.kz/kb · https://api.qut.kz/kb/ru
 

@@ -1,1 +1,1594 @@
-{"openapi":"3.0.3","info":{"title":"Qut Pay API","version":"1.0.0","description":"Kaspi арқылы төлем қабылдау. Тапсырыс жасаңыз → клиентті `payUrl`-ге жіберіңіз (немесе `qrUrl`/`deepLink` көрсетіңіз) → нәтижені webhook немесе `GET /invoices/{id}` арқылы алыңыз.\n\n**Аутентификация:** `X-API-Key: <кілт>` (немесе `Authorization: Bearer <кілт>`). Кілтті кабинеттен алыңыз: https://qut.kz/app.\n\n**Режимдер:** ұйым `sandbox` режимінде счёттар Kaspi-ге жіберілмейді, `POST /invoices/{id}/simulate` арқылы төлем имитацияланады. `live` режим Kaspi кассирін қосқаннан кейін.\n\n**Идемпотенттілік:** `Idempotency-Key` header-і бірдей болса, сол счёт қайтарылады (`idempotentReplay: true`).\n\n**Лимиттер:** кілт сайын минутына 200 жазу / 600 оқу сұранысы (`X-RateLimit-Remaining`, 429 + `Retry-After`).\n\n**Webhook:** `POST` JSON `{ event, invoice, sentAt }`, header `X-Webhook-Signature: sha256=HMAC-SHA256(secret, timestamp + \".\" + rawBody)`, `X-Webhook-Timestamp`, `X-Webhook-Event`, `X-Webhook-Delivery`. 2xx емес жауапта 11 рет қайталанады (10 с → 1 сағ, ≈2 сағ). Оқиғалар: `invoice.paid`, `invoice.failed`, `invoice.expired`, `invoice.cancelled`, `invoice.refunded`, `invoice.partially_refunded`, `webhook.test`. Ескерту: `cancelled`/`expired` счётқа ақша кешігіп келсе `invoice.paid` кейін де келуі мүмкін (`late: true`) — өңдеу идемпотентті болсын."},"servers":[{"url":"https://api.qut.kz/api/v1"}],"security":[{"ApiKey":[]},{"Bearer":[]}],"tags":[{"name":"Invoices","description":"Счёттар (QR / сілтеме / телефонға счёт)"},{"name":"Account"}],"paths":{"/invoices":{"post":{"tags":["Invoices"],"summary":"Счёт жасау","parameters":[{"in":"header","name":"Idempotency-Key","schema":{"type":"string"},"required":false}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["amount"],"properties":{"amount":{"type":"number","description":"Теңге, ең көбі 2 ондық (телефонға счёт — бүтін)","example":2500},"kind":{"type":"string","enum":["qr","phone"],"default":"qr","description":"qr — QR/сілтеме; phone — клиенттің Kaspi-іне push (customer.phone керек)"},"description":{"type":"string","maxLength":100,"description":"Клиент көреді (телефонға счёт: 60 таңба)"},"externalOrderId":{"type":"string","maxLength":100},"customer":{"type":"object","properties":{"name":{"type":"string"},"phone":{"type":"string","example":"77001234567"},"email":{"type":"string"}}},"successUrl":{"type":"string","format":"uri","description":"Төлемнен кейін клиент қайтатын бет (тек http/https)"},"failUrl":{"type":"string","format":"uri"},"metadata":{"type":"object","description":"Кез келген JSON, webhook-та қайтады"},"idempotencyKey":{"type":"string"}}},"example":{"amount":2500,"description":"Премиум жазылым","externalOrderId":"ORD-1001","customer":{"email":"a@b.kz"},"successUrl":"https://site.kz/ok","metadata":{"userId":42}}}}},"responses":{"200":{"description":"Идемпотентті қайталау (сол счёт)","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Invoice"}}}},"201":{"description":"Жасалды","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Invoice"}}}},"400":{"description":"Kaspi кассирі қосылмаған","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Error"},"example":{"error":"kaspi_session_not_configured","message":"Kaspi кассирі қосылмаған"}}}},"409":{"description":"Kaspi сессиясы үзілді, кассирмен қайта кіріңіз","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Error"},"example":{"error":"kaspi_session_expired","message":"Kaspi сессиясы үзілді, кассирмен қайта кіріңіз"}}}},"422":{"description":"Валидация қатесі: invalid_amount | invalid_phone | phone_required | amount_must_be_whole_tenge | invalid_url","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Error"},"example":{"error":"invalid_amount","message":"Валидация қатесі: invalid_amount | invalid_phone | phone_required | amount_must_be_whole_tenge | invalid_url"}}}},"429":{"description":"Күндік лимит немесе сұраныс лимиті","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Error"},"example":{"error":"tariff_limit_reached","message":"Күндік лимит немесе сұраныс лимиті"}}}},"502":{"description":"Kaspi қатесі","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Error"},"example":{"error":"kaspi_error","message":"Kaspi қатесі"}}}}}},"get":{"tags":["Invoices"],"summary":"Счёттар тізімі","parameters":[{"in":"query","name":"status","schema":{"type":"string"}},{"in":"query","name":"externalOrderId","schema":{"type":"string"}},{"in":"query","name":"search","schema":{"type":"string"}},{"in":"query","name":"mode","schema":{"type":"string","enum":["sandbox","live"]}},{"in":"query","name":"from","schema":{"type":"string","format":"date-time"}},{"in":"query","name":"to","schema":{"type":"string","format":"date-time"}},{"in":"query","name":"limit","schema":{"type":"integer","default":50,"maximum":200}},{"in":"query","name":"offset","schema":{"type":"integer","default":0}}],"responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"type":"object","properties":{"total":{"type":"integer"},"limit":{"type":"integer"},"offset":{"type":"integer"},"invoices":{"type":"array","items":{"$ref":"#/components/schemas/Invoice"}}}}}}}}}},"/invoices/{id}":{"get":{"tags":["Invoices"],"summary":"Счёт (оқиғалар мен қайтарулармен)","parameters":[{"in":"path","name":"id","required":true,"schema":{"type":"string"}},{"in":"query","name":"live","schema":{"type":"string","enum":["1"]},"description":"Провайдерден дәл қазір тексеру"}],"responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"allOf":[{"$ref":"#/components/schemas/Invoice"},{"type":"object","properties":{"events":{"type":"array","items":{"type":"object"}},"refunds":{"type":"array","items":{"type":"object"}}}}]}}}},"404":{"description":"Табылмады","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Error"},"example":{"error":"invoice_not_found","message":"Табылмады"}}}}}}},"/invoices/{id}/cancel":{"post":{"tags":["Invoices"],"summary":"Болдырмау","description":"Телефонға счёт Kaspi-де болдырылады. QR-токенді Kaspi болдырмайды: счёт жергілікті жабылады, мерзімі біткенше төленуі мүмкін (жауапта `stillPayableUntil`); ақша келсе `invoice.paid` webhook келеді.","parameters":[{"in":"path","name":"id","required":true,"schema":{"type":"string"}}],"responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Invoice"}}}},"409":{"description":"Счёт ашық емес","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Error"},"example":{"error":"invoice_not_open","message":"Счёт ашық емес"}}}}}}},"/invoices/{id}/refund":{"post":{"tags":["Invoices"],"summary":"Қайтару (толық немесе ішінара)","parameters":[{"in":"path","name":"id","required":true,"schema":{"type":"string"}}],"requestBody":{"content":{"application/json":{"schema":{"type":"object","properties":{"amount":{"type":"number","description":"Бос болса — қалғанын толық"},"reason":{"type":"string"}}}}}},"responses":{"201":{"description":"Қайтарылды","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Invoice"}}}},"409":{"description":"Тек төленген счёт","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Error"},"example":{"error":"invoice_not_refundable","message":"Тек төленген счёт"}}}},"422":{"description":"Сома қате","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Error"},"example":{"error":"invalid_refund_amount","message":"Сома қате"}}}},"502":{"description":"Kaspi қайтаруды қабылдамады","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Error"},"example":{"error":"refund_failed","message":"Kaspi қайтаруды қабылдамады"}}}}}}},"/invoices/{id}/simulate":{"post":{"tags":["Invoices"],"summary":"Sandbox: төлемді имитациялау","parameters":[{"in":"path","name":"id","required":true,"schema":{"type":"string"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["status"],"properties":{"status":{"type":"string","enum":["paid","failed","expired"]}}}}}},"responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Invoice"}}}},"403":{"description":"Тек sandbox режимінде","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Error"},"example":{"error":"not_sandbox","message":"Тек sandbox режимінде"}}}}}}},"/invoices/bulk":{"post":{"tags":["Invoices"],"summary":"Көп счёт бір сұраныспен (1..100)","description":"Әр элемент бөлек тексеріледі; жауап 207, results[].ok. Идемпотенттік — элементтегі idempotencyKey.","requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object","properties":{"invoices":{"type":"array","items":{"$ref":"#/components/schemas/InvoiceCreate"}}}}}}},"responses":{"207":{"description":"Нәтижелер","content":{"application/json":{"schema":{"type":"object","properties":{"total":{"type":"integer"},"created":{"type":"integer"},"results":{"type":"array","items":{"type":"object","properties":{"index":{"type":"integer"},"ok":{"type":"boolean"},"invoice":{"$ref":"#/components/schemas/Invoice"},"error":{"type":"string"},"message":{"type":"string"}}}}}}}}}}}},"/subscriptions":{"post":{"tags":["Subscriptions"],"summary":"Жазылым (кестелі счёт) жасау","description":"Әр N күн/апта/ай сайын клиентке счёт жасалады: kind=phone — Kaspi қосымшасына, kind=qr — төлем сілтемесі (email болса жіберіледі). Scope: subscriptions:manage немесе invoices:write.","requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/SubscriptionCreate"}}}},"responses":{"201":{"description":"Жасалды","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Subscription"}}}},"422":{"description":"Сома қате","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Error"},"example":{"error":"invalid_amount","message":"Сома қате"}}}}}},"get":{"tags":["Subscriptions"],"summary":"Жазылымдар тізімі","parameters":[{"name":"status","in":"query","schema":{"type":"string","enum":["active","paused","cancelled","finished"]}}],"responses":{"200":{"description":"OK"}}}},"/subscriptions/{id}":{"get":{"tags":["Subscriptions"],"summary":"Жазылым","parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],"responses":{"200":{"description":"OK","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Subscription"}}}},"404":{"description":"Табылмады","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Error"},"example":{"error":"subscription_not_found","message":"Табылмады"}}}}}},"patch":{"tags":["Subscriptions"],"summary":"Өзгерту (сома, кезең, клиент, nextRunAt)","parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],"requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/SubscriptionCreate"}}}},"responses":{"200":{"description":"OK"}}}},"/subscriptions/{id}/pause":{"post":{"tags":["Subscriptions"],"summary":"Тоқтата тұру","parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],"responses":{"200":{"description":"OK"}}}},"/subscriptions/{id}/resume":{"post":{"tags":["Subscriptions"],"summary":"Жалғастыру","parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],"responses":{"200":{"description":"OK"}}}},"/subscriptions/{id}/cancel":{"post":{"tags":["Subscriptions"],"summary":"Болдырмау","parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],"responses":{"200":{"description":"OK"}}}},"/subscriptions/{id}/run":{"post":{"tags":["Subscriptions"],"summary":"Кезектен тыс счёт жасау","parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],"responses":{"201":{"description":"Счёт жасалды"}}}},"/partner/organizations":{"post":{"tags":["Partner"],"summary":"Клиент үшін ұйым ашу (Partner API)","description":"Scope partner:manage, «Серіктес» тарифі. Иесінің нөмірі бойынша аккаунт жасалады (болмаса), ұйым sandbox + 7 күн сынақпен ашылады, серіктес иесі developer болып қосылады, API кілті қайтарылады.","requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["name","ownerPhone"],"properties":{"name":{"type":"string"},"ownerPhone":{"type":"string","example":"77001234567"},"ownerName":{"type":"string"},"legalName":{"type":"string"},"idn":{"type":"string"}}}}}},"responses":{"201":{"description":"Ұйым, иесі, apiKey"},"403":{"description":"Серіктес тарифі керек","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Error"},"example":{"error":"partner_required","message":"Серіктес тарифі керек"}}}}}},"get":{"tags":["Partner"],"summary":"Серіктестің клиенттері (статистикамен)","responses":{"200":{"description":"OK"}}}},"/partner/organizations/{id}":{"get":{"tags":["Partner"],"summary":"Клиент ұйымы + Kaspi байланыстары","parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],"responses":{"200":{"description":"OK"}}}},"/partner/organizations/{id}/mode":{"post":{"tags":["Partner"],"summary":"sandbox ↔ live","parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],"requestBody":{"content":{"application/json":{"schema":{"type":"object","properties":{"mode":{"type":"string","enum":["sandbox","live"]}}}}}},"responses":{"200":{"description":"OK"}}}},"/partner/organizations/{id}/api-keys":{"post":{"tags":["Partner"],"summary":"Клиентке API кілті","parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],"responses":{"201":{"description":"Кілт (бір рет)"}}}},"/partner/organizations/{id}/connections":{"post":{"tags":["Partner"],"summary":"Kaspi кассир байланысын ашу","parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],"responses":{"201":{"description":"Байланыс"}}}},"/partner/organizations/{id}/connections/{cid}/kaspi/init":{"post":{"tags":["Partner"],"summary":"Kaspi кіру: 1-қадам (processId)","parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"string"}},{"name":"cid","in":"path","required":true,"schema":{"type":"string"}}],"responses":{"200":{"description":"OK"}}}},"/partner/organizations/{id}/connections/{cid}/kaspi/send-phone":{"post":{"tags":["Partner"],"summary":"Kaspi кіру: кассир нөміріне SMS","parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"string"}},{"name":"cid","in":"path","required":true,"schema":{"type":"string"}}],"requestBody":{"content":{"application/json":{"schema":{"type":"object","properties":{"processId":{"type":"string"},"phone":{"type":"string"}}}}}},"responses":{"200":{"description":"OK"}}}},"/partner/organizations/{id}/connections/{cid}/kaspi/verify-otp":{"post":{"tags":["Partner"],"summary":"Kaspi кіру: SMS кодын растау","parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"string"}},{"name":"cid","in":"path","required":true,"schema":{"type":"string"}}],"requestBody":{"content":{"application/json":{"schema":{"type":"object","properties":{"processId":{"type":"string"},"otp":{"type":"string"}}}}}},"responses":{"200":{"description":"Қосылды"}}}},"/partner/earnings":{"get":{"tags":["Partner"],"summary":"Реферал коды, клиенттер, есептелген сыйақы","responses":{"200":{"description":"OK"}}}},"/account":{"get":{"tags":["Account"],"summary":"Ұйым, режим, Kaspi байланыстары","responses":{"200":{"description":"OK"}}}}},"components":{"securitySchemes":{"ApiKey":{"type":"apiKey","in":"header","name":"X-API-Key"},"Bearer":{"type":"http","scheme":"bearer"}},"schemas":{"InvoiceCreate":{"type":"object","required":["amount"],"properties":{"amount":{"type":"number"},"kind":{"type":"string","enum":["qr","phone"]},"description":{"type":"string"},"externalOrderId":{"type":"string"},"customer":{"type":"object","properties":{"name":{"type":"string"},"phone":{"type":"string"},"email":{"type":"string"}}},"successUrl":{"type":"string"},"failUrl":{"type":"string"},"metadata":{"type":"object"},"idempotencyKey":{"type":"string"}}},"SubscriptionCreate":{"type":"object","required":["amount"],"properties":{"amount":{"type":"number"},"kind":{"type":"string","enum":["qr","phone"]},"description":{"type":"string","maxLength":60},"interval":{"type":"string","enum":["day","week","month"],"default":"month"},"every":{"type":"integer","minimum":1,"maximum":12,"default":1},"dayOfMonth":{"type":"integer","minimum":1,"maximum":28,"nullable":true},"startAt":{"type":"string","format":"date-time","description":"Бірінші счёт уақыты; бос болса — бірден (айлық + dayOfMonth: сол күні 10:00 Алматы)"},"maxRuns":{"type":"integer","nullable":true},"customer":{"type":"object","properties":{"name":{"type":"string"},"phone":{"type":"string"},"email":{"type":"string"}}},"metadata":{"type":"object"}}},"Subscription":{"type":"object","properties":{"id":{"type":"string","example":"sub_01M1…"},"status":{"type":"string","enum":["active","paused","cancelled","finished"]},"amount":{"type":"number"},"description":{"type":"string","nullable":true},"kind":{"type":"string"},"interval":{"type":"string"},"every":{"type":"integer"},"dayOfMonth":{"type":"integer","nullable":true},"customer":{"type":"object"},"nextRunAt":{"type":"string","format":"date-time"},"lastRunAt":{"type":"string","format":"date-time","nullable":true},"lastInvoiceId":{"type":"string","nullable":true},"runs":{"type":"integer"},"maxRuns":{"type":"integer","nullable":true},"metadata":{"type":"object","nullable":true},"createdAt":{"type":"string","format":"date-time"}}},"Invoice":{"type":"object","properties":{"id":{"type":"string","example":"inv_01M1X22B2DSV3MNE1XP5S2YG41"},"status":{"type":"string","enum":["new","pending","paid","failed","expired","cancelled","refunded","partially_refunded"]},"mode":{"type":"string","enum":["sandbox","live"]},"kind":{"type":"string","enum":["qr","phone"]},"amount":{"type":"number","example":2500},"currency":{"type":"string","example":"KZT"},"description":{"type":"string","nullable":true},"externalOrderId":{"type":"string","nullable":true,"description":"Сіздің тапсырыс нөміріңіз"},"providerStatus":{"type":"string","nullable":true,"description":"Kaspi статусы (QrTokenCreated, Wait, Processed …)"},"refundedAmount":{"type":"number"},"receiptNumber":{"type":"string","nullable":true},"receiptUrl":{"type":"string","nullable":true},"providerReceiptUrl":{"type":"string","nullable":true,"description":"Kaspi чегі"},"customer":{"type":"object","properties":{"name":{"type":"string","nullable":true},"phone":{"type":"string","nullable":true},"email":{"type":"string","nullable":true}}},"metadata":{"type":"object","nullable":true},"payUrl":{"type":"string","description":"Дайын төлем беті (QR, таймер, автоматты қайту)"},"qrUrl":{"type":"string","nullable":true,"description":"QR мазмұны (бірыңғай QR)"},"deepLink":{"type":"string","nullable":true,"description":"Kaspi қосымшасын ашатын сілтеме"},"qrImageUrl":{"type":"string","nullable":true},"expiresAt":{"type":"string","format":"date-time","nullable":true},"paidAt":{"type":"string","format":"date-time","nullable":true},"createdAt":{"type":"string","format":"date-time"},"updatedAt":{"type":"string","format":"date-time"}}},"Error":{"type":"object","properties":{"error":{"type":"string","description":"Тұрақты машиналық код"},"message":{"type":"string"}}}}}}
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Qut Pay API",
+    "version": "1.0.0",
+    "description": "Kaspi арқылы төлем қабылдау. Тапсырыс жасаңыз → клиентті `payUrl`-ге жіберіңіз (немесе `qrUrl`/`deepLink` көрсетіңіз) → нәтижені webhook немесе `GET /invoices/{id}` арқылы алыңыз.\n\n**Аутентификация:** `X-API-Key: <кілт>` (немесе `Authorization: Bearer <кілт>`). Кілтті кабинеттен алыңыз: http://localhost:3040/app.\n\n**Режимдер:** ұйым `sandbox` режимінде счёттар Kaspi-ге жіберілмейді, `POST /invoices/{id}/simulate` арқылы төлем имитацияланады. `live` режим Kaspi кассирін қосқаннан кейін.\n\n**Идемпотенттілік:** `Idempotency-Key` header-і бірдей болса, сол счёт қайтарылады (`idempotentReplay: true`).\n\n**Лимиттер:** кілт сайын минутына 200 жазу / 600 оқу сұранысы (`X-RateLimit-Remaining`, 429 + `Retry-After`).\n\n**Қызметтің күйі:** кілтсіз тексеру `GET https://api.qut.kz/health` → `{\"status\":\"ok\"}`; ашық status-бет (тәуелсіз монитор, 5 минут сайын) https://status.qut.kz; сенім орталығы — қауіпсіздік шаралары, резерв, Kaspi тәуекелі: https://qut.kz/trust/ (en: /en/trust/).\n\n**Тарифтер:** Бастау 4 990 ₸/ай (800 счёт), Бизнес 14 900 ₸ (4 000), Про 39 900 ₸ (15 000), Серіктес 79 900 ₸ (30 000 + Partner API); 7 күн тегін, бірінші live счёттан басталады; платформа төлемнен пайыз алмайды. https://qut.kz/tarify/\n\n**Webhook:** `POST` JSON `{ event, invoice, sentAt }`, header `X-Webhook-Signature: sha256=HMAC-SHA256(secret, timestamp + \".\" + rawBody)`, `X-Webhook-Timestamp`, `X-Webhook-Event`, `X-Webhook-Delivery`. 2xx емес жауапта 11 рет қайталанады (10 с → 1 сағ, ≈2 сағ). Оқиғалар: `invoice.paid`, `invoice.failed`, `invoice.expired`, `invoice.cancelled`, `invoice.refunded`, `invoice.partially_refunded`, `webhook.test`. Ескерту: `cancelled`/`expired` счётқа ақша кешігіп келсе `invoice.paid` кейін де келуі мүмкін (`late: true`) — өңдеу идемпотентті болсын."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3040/api/v1"
+    }
+  ],
+  "security": [
+    {
+      "ApiKey": []
+    },
+    {
+      "Bearer": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Invoices",
+      "description": "Счёттар (QR / сілтеме / телефонға счёт)"
+    },
+    {
+      "name": "Account"
+    },
+    {
+      "name": "Partner",
+      "description": "Partner API — «Серіктес» тарифі (79 900 ₸/ай): клиент ұйымдарын ашу, кассир қосу, кілт беру"
+    }
+  ],
+  "paths": {
+    "/invoices": {
+      "post": {
+        "tags": [
+          "Invoices"
+        ],
+        "summary": "Счёт жасау",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "amount"
+                ],
+                "properties": {
+                  "amount": {
+                    "type": "number",
+                    "description": "Теңге, ең көбі 2 ондық (телефонға счёт — бүтін)",
+                    "example": 2500
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "qr",
+                      "phone"
+                    ],
+                    "default": "qr",
+                    "description": "qr — QR/сілтеме; phone — клиенттің Kaspi-іне push (customer.phone керек)"
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "description": "Клиент көреді (телефонға счёт: 60 таңба)"
+                  },
+                  "externalOrderId": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "customer": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "phone": {
+                        "type": "string",
+                        "example": "77001234567"
+                      },
+                      "email": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "successUrl": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Төлемнен кейін клиент қайтатын бет (тек http/https)"
+                  },
+                  "failUrl": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "description": "Кез келген JSON, webhook-та қайтады"
+                  },
+                  "idempotencyKey": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "amount": 2500,
+                "description": "Премиум жазылым",
+                "externalOrderId": "ORD-1001",
+                "customer": {
+                  "email": "a@b.kz"
+                },
+                "successUrl": "https://site.kz/ok",
+                "metadata": {
+                  "userId": 42
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Идемпотентті қайталау (сол счёт)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Invoice"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Жасалды",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Invoice"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Kaspi кассирі қосылмаған",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "kaspi_session_not_configured",
+                  "message": "Kaspi кассирі қосылмаған"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Kaspi сессиясы үзілді, кассирмен қайта кіріңіз",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "kaspi_session_expired",
+                  "message": "Kaspi сессиясы үзілді, кассирмен қайта кіріңіз"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Валидация қатесі: invalid_amount | invalid_phone | phone_required | amount_must_be_whole_tenge | invalid_url",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_amount",
+                  "message": "Валидация қатесі: invalid_amount | invalid_phone | phone_required | amount_must_be_whole_tenge | invalid_url"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Күндік лимит немесе сұраныс лимиті",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "tariff_limit_reached",
+                  "message": "Күндік лимит немесе сұраныс лимиті"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Kaspi қатесі",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "kaspi_error",
+                  "message": "Kaspi қатесі"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Invoices"
+        ],
+        "summary": "Счёттар тізімі",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "externalOrderId",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mode",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "sandbox",
+                "live"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 200
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    },
+                    "invoices": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Invoice"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/invoices/{id}": {
+      "get": {
+        "tags": [
+          "Invoices"
+        ],
+        "summary": "Счёт (оқиғалар мен қайтарулармен)",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "live",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ]
+            },
+            "description": "Провайдерден дәл қазір тексеру"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Invoice"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "events": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        },
+                        "refunds": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Табылмады",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invoice_not_found",
+                  "message": "Табылмады"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/invoices/{id}/cancel": {
+      "post": {
+        "tags": [
+          "Invoices"
+        ],
+        "summary": "Болдырмау",
+        "description": "Телефонға счёт Kaspi-де болдырылады. QR-токенді Kaspi болдырмайды: счёт жергілікті жабылады, мерзімі біткенше төленуі мүмкін (жауапта `stillPayableUntil`); ақша келсе `invoice.paid` webhook келеді.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Invoice"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Счёт ашық емес",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invoice_not_open",
+                  "message": "Счёт ашық емес"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/invoices/{id}/refund": {
+      "post": {
+        "tags": [
+          "Invoices"
+        ],
+        "summary": "Қайтару (толық немесе ішінара)",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "number",
+                    "description": "Бос болса — қалғанын толық"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Қайтарылды",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Invoice"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Тек төленген счёт",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invoice_not_refundable",
+                  "message": "Тек төленген счёт"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Сома қате",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_refund_amount",
+                  "message": "Сома қате"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Kaspi қайтаруды қабылдамады",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "refund_failed",
+                  "message": "Kaspi қайтаруды қабылдамады"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/invoices/{id}/simulate": {
+      "post": {
+        "tags": [
+          "Invoices"
+        ],
+        "summary": "Sandbox: төлемді имитациялау",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "paid",
+                      "failed",
+                      "expired"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Invoice"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Тек sandbox режимінде",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "not_sandbox",
+                  "message": "Тек sandbox режимінде"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/invoices/bulk": {
+      "post": {
+        "tags": [
+          "Invoices"
+        ],
+        "summary": "Көп счёт бір сұраныспен (1..100)",
+        "description": "Әр элемент бөлек тексеріледі; жауап 207, results[].ok. Идемпотенттік — элементтегі idempotencyKey.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "invoices": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/InvoiceCreate"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "207": {
+            "description": "Нәтижелер",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer"
+                    },
+                    "created": {
+                      "type": "integer"
+                    },
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "index": {
+                            "type": "integer"
+                          },
+                          "ok": {
+                            "type": "boolean"
+                          },
+                          "invoice": {
+                            "$ref": "#/components/schemas/Invoice"
+                          },
+                          "error": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/subscriptions": {
+      "post": {
+        "tags": [
+          "Subscriptions"
+        ],
+        "summary": "Жазылым (кестелі счёт) жасау",
+        "description": "Әр N күн/апта/ай сайын клиентке счёт жасалады: kind=phone — Kaspi қосымшасына, kind=qr — төлем сілтемесі (email болса жіберіледі). Scope: subscriptions:manage немесе invoices:write.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscriptionCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Жасалды",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Subscription"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Сома қате",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "invalid_amount",
+                  "message": "Сома қате"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Subscriptions"
+        ],
+        "summary": "Жазылымдар тізімі",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "paused",
+                "cancelled",
+                "finished"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/subscriptions/{id}": {
+      "get": {
+        "tags": [
+          "Subscriptions"
+        ],
+        "summary": "Жазылым",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Subscription"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Табылмады",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "subscription_not_found",
+                  "message": "Табылмады"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Subscriptions"
+        ],
+        "summary": "Өзгерту (сома, кезең, клиент, nextRunAt)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscriptionCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/subscriptions/{id}/pause": {
+      "post": {
+        "tags": [
+          "Subscriptions"
+        ],
+        "summary": "Тоқтата тұру",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/subscriptions/{id}/resume": {
+      "post": {
+        "tags": [
+          "Subscriptions"
+        ],
+        "summary": "Жалғастыру",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/subscriptions/{id}/cancel": {
+      "post": {
+        "tags": [
+          "Subscriptions"
+        ],
+        "summary": "Болдырмау",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/subscriptions/{id}/run": {
+      "post": {
+        "tags": [
+          "Subscriptions"
+        ],
+        "summary": "Кезектен тыс счёт жасау",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Счёт жасалды"
+          }
+        }
+      }
+    },
+    "/partner/organizations": {
+      "post": {
+        "tags": [
+          "Partner"
+        ],
+        "summary": "Клиент үшін ұйым ашу (Partner API)",
+        "description": "Scope partner:manage, «Серіктес» тарифі (79 900 ₸/ай, айына 30 000 счёт; тарифті платформа қосады, сосын серіктес кабинеттің Серіктестік бетінен төлейді; сол бетте клиент ұйымын формамен де ашуға болады). Иесінің нөмірі бойынша аккаунт жасалады (болмаса), ұйым sandbox + 7 күн сынақпен ашылады, серіктес иесі developer болып қосылады, API кілті қайтарылады.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "ownerPhone"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "ownerPhone": {
+                    "type": "string",
+                    "example": "77001234567"
+                  },
+                  "ownerName": {
+                    "type": "string"
+                  },
+                  "legalName": {
+                    "type": "string"
+                  },
+                  "idn": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Ұйым, иесі, apiKey"
+          },
+          "403": {
+            "description": "Серіктес тарифі керек",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "partner_required",
+                  "message": "Серіктес тарифі керек"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Partner"
+        ],
+        "summary": "Серіктестің клиенттері (статистикамен)",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/partner/organizations/{id}": {
+      "get": {
+        "tags": [
+          "Partner"
+        ],
+        "summary": "Клиент ұйымы + Kaspi байланыстары",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/partner/organizations/{id}/mode": {
+      "post": {
+        "tags": [
+          "Partner"
+        ],
+        "summary": "sandbox ↔ live",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "sandbox",
+                      "live"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/partner/organizations/{id}/api-keys": {
+      "post": {
+        "tags": [
+          "Partner"
+        ],
+        "summary": "Клиентке API кілті",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Кілт (бір рет)"
+          }
+        }
+      }
+    },
+    "/partner/organizations/{id}/connections": {
+      "post": {
+        "tags": [
+          "Partner"
+        ],
+        "summary": "Kaspi кассир байланысын ашу",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Байланыс"
+          }
+        }
+      }
+    },
+    "/partner/organizations/{id}/connections/{cid}/kaspi/init": {
+      "post": {
+        "tags": [
+          "Partner"
+        ],
+        "summary": "Kaspi кіру: 1-қадам (processId)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/partner/organizations/{id}/connections/{cid}/kaspi/send-phone": {
+      "post": {
+        "tags": [
+          "Partner"
+        ],
+        "summary": "Kaspi кіру: кассир нөміріне SMS",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "processId": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/partner/organizations/{id}/connections/{cid}/kaspi/verify-otp": {
+      "post": {
+        "tags": [
+          "Partner"
+        ],
+        "summary": "Kaspi кіру: SMS кодын растау",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "processId": {
+                    "type": "string"
+                  },
+                  "otp": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Қосылды"
+          }
+        }
+      }
+    },
+    "/partner/earnings": {
+      "get": {
+        "tags": [
+          "Partner"
+        ],
+        "summary": "Реферал коды, клиенттер, есептелген сыйақы",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/account": {
+      "get": {
+        "tags": [
+          "Account"
+        ],
+        "summary": "Ұйым, режим, Kaspi байланыстары",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      },
+      "Bearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "InvoiceCreate": {
+        "type": "object",
+        "required": [
+          "amount"
+        ],
+        "properties": {
+          "amount": {
+            "type": "number"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "qr",
+              "phone"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "externalOrderId": {
+            "type": "string"
+          },
+          "customer": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "phone": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string"
+              }
+            }
+          },
+          "successUrl": {
+            "type": "string"
+          },
+          "failUrl": {
+            "type": "string"
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "idempotencyKey": {
+            "type": "string"
+          }
+        }
+      },
+      "SubscriptionCreate": {
+        "type": "object",
+        "required": [
+          "amount"
+        ],
+        "properties": {
+          "amount": {
+            "type": "number"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "qr",
+              "phone"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 60
+          },
+          "interval": {
+            "type": "string",
+            "enum": [
+              "day",
+              "week",
+              "month"
+            ],
+            "default": "month"
+          },
+          "every": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 12,
+            "default": 1
+          },
+          "dayOfMonth": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 28,
+            "nullable": true
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Бірінші счёт уақыты; бос болса — бірден (айлық + dayOfMonth: сол күні 10:00 Алматы)"
+          },
+          "maxRuns": {
+            "type": "integer",
+            "nullable": true
+          },
+          "customer": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "phone": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string"
+              }
+            }
+          },
+          "metadata": {
+            "type": "object"
+          }
+        }
+      },
+      "Subscription": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "sub_01M1…"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "paused",
+              "cancelled",
+              "finished"
+            ]
+          },
+          "amount": {
+            "type": "number"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "kind": {
+            "type": "string"
+          },
+          "interval": {
+            "type": "string"
+          },
+          "every": {
+            "type": "integer"
+          },
+          "dayOfMonth": {
+            "type": "integer",
+            "nullable": true
+          },
+          "customer": {
+            "type": "object"
+          },
+          "nextRunAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastRunAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lastInvoiceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "runs": {
+            "type": "integer"
+          },
+          "maxRuns": {
+            "type": "integer",
+            "nullable": true
+          },
+          "metadata": {
+            "type": "object",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Invoice": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "inv_01M1X22B2DSV3MNE1XP5S2YG41"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "pending",
+              "paid",
+              "failed",
+              "expired",
+              "cancelled",
+              "refunded",
+              "partially_refunded"
+            ]
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "sandbox",
+              "live"
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "qr",
+              "phone"
+            ]
+          },
+          "amount": {
+            "type": "number",
+            "example": 2500
+          },
+          "currency": {
+            "type": "string",
+            "example": "KZT"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "externalOrderId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Сіздің тапсырыс нөміріңіз"
+          },
+          "providerStatus": {
+            "type": "string",
+            "nullable": true,
+            "description": "Kaspi статусы (QrTokenCreated, Wait, Processed …)"
+          },
+          "refundedAmount": {
+            "type": "number"
+          },
+          "receiptNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "receiptUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "providerReceiptUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Kaspi чегі"
+          },
+          "customer": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "nullable": true
+              },
+              "phone": {
+                "type": "string",
+                "nullable": true
+              },
+              "email": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "nullable": true
+          },
+          "payUrl": {
+            "type": "string",
+            "description": "Дайын төлем беті (QR, таймер, автоматты қайту)"
+          },
+          "qrUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "QR мазмұны (бірыңғай QR)"
+          },
+          "deepLink": {
+            "type": "string",
+            "nullable": true,
+            "description": "Kaspi қосымшасын ашатын сілтеме"
+          },
+          "qrImageUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "paidAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Тұрақты машиналық код"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

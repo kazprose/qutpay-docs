@@ -1,10 +1,10 @@
 # Сайтқа интеграция (Qut Pay API)
 
-Әлі қосылмаған болсаңыз, алдымен [Қалай қосу керек](https://api.qut.kz/docs/guide/start) бетін оқыңыз — Kaspi кассирін жалғау сонда жазылған.
+Әлі қосылмаған болсаңыз, алдымен [Қалай қосу керек](START.md) бетін оқыңыз — Kaspi кассирін жалғау сонда жазылған.
 
 Толық спецификация: **https://api.qut.kz/docs** (OpenAPI: `/openapi.json`, AI-көмекшіге арналған қысқа нұсқаулық: `/for-ai`).
 
-**Бағасы:** тұрақты айлық жазылым, платформа төлемнен пайыз алмайды — Бастау 4 990 ₸/ай (айына 800 счёт), Бизнес 14 900 ₸ (4 000), Про 39 900 ₸ (15 000); 7 күн тегін, бірінші нақты счёттан. Kaspi өз QR комиссиясын (0,95 %) бөлек ұстайды. Толығы: [Тарифтер](https://qut.kz/tarifter/) · [Тарифы (ru)](https://qut.kz/ru/tarify/).
+**Бағасы:** тұрақты айлық жазылым, платформа төлемнен пайыз алмайды — Бастау 4 990 ₸/ай (айына 800 счёт), Бизнес 14 900 ₸ (4 000), Про 39 900 ₸ (15 000); 7 күн тегін, бірінші нақты счёттан. Kaspi өз QR комиссиясын (0,95 %) бөлек ұстайды. Толығы: [Тарифтер](https://qut.kz/kk/tarifter/) · [Тарифы (ru)](https://qut.kz/tarify/).
 
 Сайт екі жерде ғана сөйлеседі:
 
@@ -143,9 +143,9 @@ Sandbox счёттары кассирге тіркелмейді, олар ұй�
 - **Жазылым**: `POST /api/v1/subscriptions {amount, interval: month|week|day, every, dayOfMonth?, kind: phone|qr, customer:{phone,email,name}, maxRuns?, startAt?}` — әр кезеңде счёт автоматты жасалады (`kind: phone` → клиенттің Kaspi қосымшасына; `qr` → сілтеме, email болса хат). Басқару: `/pause`, `/resume` (`{"catchUp": true}` десеңіз, өткізіп алған кезек бірден орындалады; әйтпесе келесі кестеден жалғасады), `/cancel`, `/run` (кезектен тыс). **Қайталау және өткізіп алу саясаты**: счёт жасау сәтсіз болса (Kaspi жауап бермеді, сессия үзілді, тариф) `retryDelaysMin` сатысы бойынша қайталанады, әдепкісі `[15, 60, 360]` минут; саты біткен соң сол кезек тасталады, мерчантқа Telegram/email хабар кетеді, кесте жалғаса береді (жауапта `retryAttempt`, `failedRuns`, `lastError`, `lastRunStatus`: `ok | retrying | failed | skipped`). `misfirePolicy`: `run_once` (әдепкі) — кешіккен кезек бір рет орындалады; `skip` — `misfireAfterMin`-нен (әдепкі 1440) кеш болса өткізіліп, келесі кестеге көшеді. Счёт `metadata.subscriptionId` және `metadata.run` алып жүреді, webhook-тар әдеттегідей келеді.
 - **Bulk**: `POST /api/v1/invoices/bulk {invoices:[…]}` — 100-ге дейін, жауап 207 және әр элемент бойынша нәтиже.
 - **Форма-хуктар** (Tilda, Webflow, кез келген HTML форма): кабинет → Интеграциялар → «Форма-хук» → URL `https://api.qut.kz/hooks/form/<token>`. Форма өрістері еркін аталады (`amount|sum|price|Paymentsum`, `phone|Phone|tel`, `email`, `name`, `comment`); жауап `{ok, invoiceId, payUrl}`, `?redirect=1` болса — төлем бетіне 302. Tilda-ның «test» пингі қабылданады. `defaults.kind = phone` болса клиентке счёт Kaspi қосымшасына кетеді.
-- **Partner API**: [docs/PARTNER.md](https://api.qut.kz/docs/guide/partner).
-- **1C**: [docs/1C.md](https://api.qut.kz/docs/guide/1c). **n8n**: `packages/n8n-qutpay`. **OpenCart**: `packages/opencart-qutpay`.
+- **Partner API**: [docs/PARTNER.md](PARTNER.md).
+- **1C**: [docs/1C.md](1C.md). **n8n**: `packages/n8n-qutpay`. **OpenCart**: `packages/opencart-qutpay`.
 
 ## 6. WordPress / WooCommerce
 
-Дайын плагин: https://api.qut.kz/downloads/qutpay-for-woocommerce.zip. Толық орнату нұсқаулығы (кілт, webhook, баптау, сынау, қателер): [WORDPRESS.md](https://api.qut.kz/docs/guide/wordpress) → https://api.qut.kz/docs/guide/wordpress. OpenCart 4: https://api.qut.kz/downloads/qutpay.ocmod.zip (README архивтің ішінде).
+Дайын плагин: https://api.qut.kz/downloads/qutpay-for-woocommerce.zip. Толық орнату нұсқаулығы (кілт, webhook, баптау, сынау, қателер): [WORDPRESS.md](WORDPRESS.md) → https://api.qut.kz/docs/guide/wordpress. OpenCart 4: https://api.qut.kz/downloads/qutpay.ocmod.zip (README архивтің ішінде).
