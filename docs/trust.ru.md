@@ -49,7 +49,7 @@ Qut Pay — **независимый сервис, не партнёр Kaspi Ban
 ## Открытость
 
 - Публичная документация, OpenAPI и примеры: [github.com/kazprose/qutpay-docs](https://github.com/kazprose/qutpay-docs) (MIT).
-- База знаний: 126 статей на казахском и русском — [api.qut.kz/kb/ru](https://api.qut.kz/kb/ru), машиночитаемый индекс [kb/index.json](https://api.qut.kz/kb/index.json).
+- База знаний: 138 статей на казахском и русском — [api.qut.kz/kb/ru](https://api.qut.kz/kb/ru), машиночитаемый индекс [kb/index.json](https://api.qut.kz/kb/index.json).
 - Руководства на русском, казахском и английском: [api.qut.kz/docs/guide/start](https://api.qut.kz/docs/guide/start).
 - Для ИИ-ассистентов: [api.qut.kz/for-ai](https://api.qut.kz/for-ai), [llms.txt](https://qut.kz/llms.txt), [OpenAPI](https://api.qut.kz/openapi.json).
 - Тарифы без скрытых условий: [qut.kz/tarify](/tarify/). Платформа не берёт процент с платежей; комиссия Kaspi за QR взимается Kaspi отдельно.

@@ -11,13 +11,14 @@ class QutPay_Webhook {
 			register_rest_route( 'qutpay/v1', '/webhook', array(
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'handle' ),
+				// Public on purpose: the request is authenticated by the HMAC-SHA256 signature checked in handle(), not by a WordPress user.
 				'permission_callback' => '__return_true',
 			) );
 		} );
 	}
 
 	public static function handle( WP_REST_Request $req ) {
-		$gateway = WC_Gateway_QutPay::instance();
+		$gateway = QutPay_WC_Gateway::instance();
 		if ( ! $gateway ) {
 			return new WP_REST_Response( array( 'error' => 'gateway_unavailable' ), 503 );
 		}
@@ -53,7 +54,7 @@ class QutPay_Webhook {
 			$gateway->log( 'webhook: order not found for invoice ' . ( isset( $invoice['id'] ) ? $invoice['id'] : '?' ), 'warning' );
 			return new WP_REST_Response( array( 'ok' => true, 'ignored' => 'order_not_found' ), 200 );
 		}
-		$result = WC_Gateway_QutPay::apply_invoice( $order, $invoice, 'webhook ' . $data['event'] );
+		$result = QutPay_WC_Gateway::apply_invoice( $order, $invoice, 'webhook ' . $data['event'] );
 		$gateway->log( 'webhook ' . $data['event'] . ' for order ' . $order->get_id() . ': ' . $result );
 		return new WP_REST_Response( array( 'ok' => true, 'result' => $result ), 200 );
 	}

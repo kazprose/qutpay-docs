@@ -49,7 +49,7 @@ We do not hide this risk in the docs or in the [offer](https://api.qut.kz/docs/g
 ## Openness
 
 - Public docs, OpenAPI and examples: [github.com/kazprose/qutpay-docs](https://github.com/kazprose/qutpay-docs) (MIT).
-- Knowledge base: 126 articles in Kazakh and Russian — [api.qut.kz/kb/ru](https://api.qut.kz/kb/ru), machine-readable index [kb/index.json](https://api.qut.kz/kb/index.json).
+- Knowledge base: 138 articles in Kazakh and Russian — [api.qut.kz/kb/ru](https://api.qut.kz/kb/ru), machine-readable index [kb/index.json](https://api.qut.kz/kb/index.json).
 - Guides in Russian, Kazakh and English: [api.qut.kz/docs/guide/en/start](https://api.qut.kz/docs/guide/en/start).
 - For AI assistants: [api.qut.kz/for-ai](https://api.qut.kz/for-ai), [llms.txt](https://qut.kz/llms.txt), [OpenAPI](https://api.qut.kz/openapi.json).
 - Pricing with no hidden terms: [qut.kz/tarify](/tarify/) (Russian). The platform takes no percentage of payments; Kaspi's QR fee is charged by Kaspi separately.

@@ -3,7 +3,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class WC_Gateway_QutPay extends WC_Payment_Gateway {
+class QutPay_WC_Gateway extends WC_Payment_Gateway {
 
 	public function __construct() {
 		$this->id                 = 'qutpay';
@@ -44,10 +44,10 @@ class WC_Gateway_QutPay extends WC_Payment_Gateway {
 			return;
 		}
 		if ( ! $this->get_option( 'api_key' ) ) {
-			echo '<div class="notice notice-warning"><p><strong>Qut Pay:</strong> укажите API-ключ в настройках способа оплаты.</p></div>';
+			echo '<div class="notice notice-warning"><p><strong>Qut Pay:</strong> ' . esc_html__( 'укажите API-ключ в настройках способа оплаты.', 'qut-pay-for-woocommerce' ) . '</p></div>';
 		}
 		if ( ! $this->get_option( 'webhook_secret' ) ) {
-			echo '<div class="notice notice-warning"><p><strong>Qut Pay:</strong> без секрета webhook заказы не будут отмечаться как оплаченные автоматически.</p></div>';
+			echo '<div class="notice notice-warning"><p><strong>Qut Pay:</strong> ' . esc_html__( 'без секрета webhook заказы не будут отмечаться как оплаченные автоматически.', 'qut-pay-for-woocommerce' ) . '</p></div>';
 		}
 	}
 
@@ -204,7 +204,7 @@ class WC_Gateway_QutPay extends WC_Payment_Gateway {
 			self::apply_invoice( $order, $inv, 'thank-you' );
 		}
 		if ( ! $order->is_paid() ) {
-			echo '<p class="qutpay-pending">Төлем әлі расталған жоқ. Kaspi-де төлеп болсаңыз, бірнеше секундтан кейін бетті жаңартыңыз. / Оплата ещё не подтверждена, обновите страницу через несколько секунд.</p>';
+			echo '<p class="qutpay-pending">' . esc_html__( 'Төлем әлі расталған жоқ. Kaspi-де төлеп болсаңыз, бірнеше секундтан кейін бетті жаңартыңыз. / Оплата ещё не подтверждена, обновите страницу через несколько секунд.', 'qut-pay-for-woocommerce' ) . '</p>';
 		}
 	}
 
@@ -223,7 +223,7 @@ class WC_Gateway_QutPay extends WC_Payment_Gateway {
 		return true;
 	}
 
-	/** @return WC_Gateway_QutPay|null */
+	/** @return QutPay_WC_Gateway|null */
 	public static function instance() {
 		if ( ! function_exists( 'WC' ) ) {
 			return null;

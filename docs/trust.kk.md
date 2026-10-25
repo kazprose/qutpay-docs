@@ -49,7 +49,7 @@ Qut Pay — **тәуелсіз сервис, Kaspi Bank-тің серіктес�
 ## Ашықтық
 
 - Жария құжаттама, OpenAPI және мысалдар: [github.com/kazprose/qutpay-docs](https://github.com/kazprose/qutpay-docs) (MIT).
-- Білім базасы: қазақша және орысша 126 мақала — [api.qut.kz/kb](https://api.qut.kz/kb), машина оқитын индекс [kb/index.json](https://api.qut.kz/kb/index.json).
+- Білім базасы: қазақша және орысша 138 мақала — [api.qut.kz/kb](https://api.qut.kz/kb), машина оқитын индекс [kb/index.json](https://api.qut.kz/kb/index.json).
 - Нұсқаулықтар орысша, қазақша, ағылшынша: [api.qut.kz/docs/guide/kk/start](https://api.qut.kz/docs/guide/kk/start).
 - ЖИ-көмекшілерге: [api.qut.kz/for-ai](https://api.qut.kz/for-ai), [llms.txt](https://qut.kz/llms.txt), [OpenAPI](https://api.qut.kz/openapi.json).
 - Жасырын шартсыз тарифтер: [qut.kz/kk/tarifter](/kk/tarifter/). Платформа төлемнен пайыз алмайды; Kaspi-дің QR комиссиясын Kaspi бөлек ұстайды.
