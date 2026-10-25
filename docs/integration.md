@@ -1,6 +1,6 @@
 # Qut Pay — integration guide for AI coding agents
 
-Public docs, OpenAPI and examples on GitHub: https://github.com/kazprose/qutpay-docs · Knowledge base (merchant-facing answers, Kazakh and Russian): https://api.qut.kz/kb · machine-readable index with every article and its .md URL: https://api.qut.kz/kb/index.json · everything in one file: https://api.qut.kz/llms-full.txt
+Agent skill (short procedure, install into .claude/skills or just read): https://api.qut.kz/SKILL.md · MCP server with tools for invoices, status, refunds and sandbox simulation: `npx -y @qutpay/mcp` (guide: https://api.qut.kz/docs/guide/en/mcp) · Public docs, OpenAPI and examples on GitHub: https://github.com/kazprose/qutpay-docs · Knowledge base (merchant-facing answers, Kazakh and Russian): https://api.qut.kz/kb · machine-readable index with every article and its .md URL: https://api.qut.kz/kb/index.json · everything in one file: https://api.qut.kz/llms-full.txt
 
 > Скопируйте этот текст целиком в ChatGPT / Claude / Cursor / Copilot / Codex вместе с задачей «Подключи оплату через Kaspi (Qut Pay) к моему проекту». Агент получит всё необходимое. Ключ API и секрет webhook вставьте сами в переменные окружения — никогда не отправляйте их в чат с ИИ.
 > Осы мәтінді толығымен ЖИ-агентке көшіріп, «Жобама Qut Pay арқылы Kaspi төлемін қос» деп тапсырма беріңіз. API кілті мен webhook құпиясын чатқа жазбаңыз — тек .env файлына қойыңыз.
@@ -120,6 +120,7 @@ Rate limits: 200 writes and 600 reads per minute per key (`X-RateLimit-Remaining
 
 ## 6. Ready-made code
 
+- MCP server `@qutpay/mcp` (Claude Code: `claude mcp add qutpay -e QUTPAY_API_KEY=qp_test_… -- npx -y @qutpay/mcp`; Cursor/Claude Desktop: `{"command":"npx","args":["-y","@qutpay/mcp"],"env":{"QUTPAY_API_KEY":"…"}}`): tools `qutpay_account`, `qutpay_create_invoice`, `qutpay_get_invoice`, `qutpay_list_invoices`, `qutpay_cancel_invoice`, `qutpay_refund_invoice` (live needs `confirm: true`), `qutpay_simulate_payment` (sandbox only), subscriptions read; resources `qutpay://skill`, `qutpay://docs/*`; prompts `integrate-checkout`, `verify-sandbox`. Zip without npm: https://api.qut.kz/downloads/qutpay-mcp.zip. Agent skill folder (SKILL.md + references): https://api.qut.kz/SKILL.md, https://api.qut.kz/skill/references/webhook-verify.md, https://api.qut.kz/skill/references/errors.md.
 - Node.js SDK: https://api.qut.kz/downloads/qutpay-sdk-node.zip (PHP: qutpay-sdk-php.zip, Python: qutpay-sdk-python.zip) — `new QutPay({ apiKey })`, `createInvoice()`, `verifyWebhook({ secret, rawBody, headers })`.
 - PHP: `packages/sdk-php/src/QutPay.php` (single file, `\QutPay\Client`, `\QutPay\Webhook::verify`).
 - Python: `packages/sdk-python/qutpay.py` (stdlib only, `QutPay`, `verify_webhook`).

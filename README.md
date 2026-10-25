@@ -13,6 +13,11 @@ curl -X POST https://api.qut.kz/api/v1/invoices \
 ```
 When the customer pays, `POST` to your webhook URL with header `X-Qutpay-Signature: sha256=<HMAC of raw body>`; verify with your webhook secret, then mark the order paid. Full flow, retries and idempotency: [`docs/integration.md`](docs/integration.md).
 
+## For AI agents
+
+- **Agent skill** (`skills/qutpay/`): copy into `.claude/skills/qutpay/` (Claude Code) or upload as a zip to Claude.ai — the agent then follows the Qut Pay integration procedure on its own. Also served at https://api.qut.kz/SKILL.md
+- **MCP server** (`examples/mcp`, npm `@qutpay/mcp`): `claude mcp add qutpay -e QUTPAY_API_KEY=qp_test_… -- npx -y @qutpay/mcp` — tools to create invoices, check status, refund and simulate payments in sandbox. Guide: https://api.qut.kz/docs/guide/en/mcp
+
 ## Contents
 - `openapi.json` — the API contract (also served live at https://api.qut.kz/openapi.json)
 - [`docs/integration.md`](docs/integration.md) — step by step, with the webhook signature check in Node.js, PHP and Python

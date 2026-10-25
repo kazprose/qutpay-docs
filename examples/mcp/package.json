@@ -1,0 +1,20 @@
+{
+  "name": "@qutpay/mcp",
+  "version": "0.1.0",
+  "description": "MCP server for Qut Pay — lets AI agents (Claude Code, Cursor, Claude Desktop…) create Kaspi QR invoices, check status, refund and test in sandbox through the Qut Pay API (Kazakhstan).",
+  "type": "module",
+  "bin": { "qutpay-mcp": "bin/qutpay-mcp.js" },
+  "main": "src/server.js",
+  "exports": { ".": "./src/server.js" },
+  "files": ["bin", "src", "README.md"],
+  "scripts": { "start": "node bin/qutpay-mcp.js", "test": "node --test test/*.test.js" },
+  "keywords": ["mcp", "model-context-protocol", "kaspi", "kaspi-pay", "qr", "payments", "kazakhstan", "qutpay", "claude", "cursor"],
+  "license": "MIT",
+  "homepage": "https://qut.kz",
+  "repository": { "type": "git", "url": "https://github.com/kazprose/qutpay-docs" },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^3.25.0"
+  }
+}
