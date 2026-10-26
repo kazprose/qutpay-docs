@@ -20,6 +20,7 @@ The Partner tariff is **79 900 ₸/month** for up to 30 000 invoices a month (cl
 | `POST …/{id}/mode {mode: 'live'}` | Switch to live mode (an active connection is required) |
 | `POST …/{id}/api-keys {name, scopes?}` | A new key for the client |
 | `GET …/{id}/members`, `POST …/{id}/members {phone|email, role: manager|developer, name?}`, `DELETE …/{id}/members/{accountId}` | The client's staff: list, add, remove. Only the client changes its owner; at most 10 members per organization |
+| `DELETE /api/v1/partner/organizations/{id}` | Close (archive) a client opened by mistake — only while it was never used: no invoices, the owner never signed in. Otherwise `409 client_in_use`: the client's owner closes it in the cabinet (Settings → "Close organization"). Closing = archiving: invoices and the audit log stay, keys and cashiers stop |
 | `GET /api/v1/partner/earnings` | Referral code, clients, accrued rewards |
 
 The partner manages the client's invoices **with the client's key** (`/api/v1/invoices`), or views them by signing in to the cabinet.

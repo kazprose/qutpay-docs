@@ -1002,6 +1002,31 @@
             "description": "OK"
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "Partner"
+        ],
+        "summary": "Қателесіп ашылған клиентті жабу (архивтеу) — тек ешқашан қолданылмаған ұйым",
+        "description": "Счёт жоқ, иесі кірмеген, сынақ тарифінде болса ғана; әйтпесе 409 client_in_use — жабуды клиенттің иесі кабинетте шешеді.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Архивтелген ұйым"
+          },
+          "409": {
+            "description": "client_in_use"
+          }
+        }
       }
     },
     "/partner/organizations/{id}/mode": {
