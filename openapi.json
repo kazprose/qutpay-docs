@@ -1218,6 +1218,116 @@
         }
       }
     },
+    "/partner/organizations/{id}/members": {
+      "get": {
+        "tags": [
+          "Partner"
+        ],
+        "summary": "Клиент ұйымының қызметкерлері",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Partner"
+        ],
+        "summary": "Клиентке қызметкер қосу (manager | developer; иесін тек клиент өзі)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "phone": {
+                    "type": "string",
+                    "description": "7XXXXXXXXXX (немесе email)"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "manager",
+                      "developer"
+                    ],
+                    "default": "manager"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "{ members, account }"
+          },
+          "403": {
+            "description": "partner_cannot_assign_owner"
+          },
+          "409": {
+            "description": "members_limit (10)"
+          }
+        }
+      }
+    },
+    "/partner/organizations/{id}/members/{accountId}": {
+      "delete": {
+        "tags": [
+          "Partner"
+        ],
+        "summary": "Клиент қызметкерін алып тастау (иесін емес)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accountId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "members"
+          }
+        }
+      }
+    },
     "/partner/earnings": {
       "get": {
         "tags": [

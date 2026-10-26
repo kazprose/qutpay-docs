@@ -106,7 +106,7 @@ Use the **raw request body bytes** (before JSON parsing). Respond `2xx` within 8
 - `GET /account` — organization, mode (`sandbox`/`live`), tariff, connected Kaspi cashiers.
 - Payment links (no code): the merchant creates `https://qut.kz/p/<slug>` in the cabinet; customers enter the amount themselves.
 - Form hooks (Tilda, Webflow, any HTML form): the cabinet gives a URL `https://api.qut.kz/hooks/form/<token>`; POST the form there (fields `amount|sum|price`, `phone`, `email`, `name`, `comment`) → JSON `{ ok, invoiceId, payUrl }`, or add `?redirect=1` to 302 the customer to the pay page. No API key needed.
-- Partner API (`partner:manage` scope, partner tariff): `POST /partner/organizations` creates a client organization and returns its API key — see `https://api.qut.kz/docs/guide/partner`.
+- Partner API (`partner:manage` scope, partner tariff): `POST /partner/organizations` creates a client organization and returns its API key; `GET/POST/DELETE /partner/organizations/{id}/members` manage the client's managers/developers (never owners, max 10) — see `https://api.qut.kz/docs/guide/partner`.
 
 ## 4. Sandbox testing
 

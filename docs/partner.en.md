@@ -19,8 +19,11 @@ The Partner tariff is **79 900 ₸/month** for up to 30 000 invoices a month (cl
 | `POST …/{id}/connections` → `…/{cid}/kaspi/init` → `send-phone {processId, phone}` → `verify-otp {processId, otp}` | Connecting the client's Kaspi "Кассир" (Cashier) (the SMS code is sent to the cashier's phone) |
 | `POST …/{id}/mode {mode: 'live'}` | Switch to live mode (an active connection is required) |
 | `POST …/{id}/api-keys {name, scopes?}` | A new key for the client |
+| `GET …/{id}/members`, `POST …/{id}/members {phone|email, role: manager|developer, name?}`, `DELETE …/{id}/members/{accountId}` | The client's staff: list, add, remove. Only the client changes its owner; at most 10 members per organization |
 | `GET /api/v1/partner/earnings` | Referral code, clients, accrued rewards |
 
-The partner manages the client's invoices **with the client's key** (`/api/v1/invoices`), or views them by signing in to the cabinet (developer role).
+The partner manages the client's invoices **with the client's key** (`/api/v1/invoices`), or views them by signing in to the cabinet.
+
+**The partner role.** The owner and developers of the partner organization automatically act in every client organization with the role "partner" (clients appear in the organization switcher). It ranks above developer: creates keys, webhooks and invoices, may pay the tariff, adds and removes the client's managers/developers — but cannot change or remove the owner or close the organization. When someone leaves the partner organization, access to all clients ends at once; partner staff with the manager role do not enter clients. The client's owner can end the partner's access at any time (Settings → "Partner access"): the referral link stays, members added by the partner stay. The Partnership page in the cabinet has a "Staff" section for every client.
 
 Full description: https://api.qut.kz/docs (Partner tag).
