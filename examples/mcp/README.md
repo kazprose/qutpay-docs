@@ -12,7 +12,7 @@ Claude Code:
 claude mcp add qutpay -e QUTPAY_API_KEY=qp_test_… -- npx -y @qutpay/mcp
 ```
 
-Cursor / Windsurf / Claude Desktop / VS Code (`mcp.json`, `claude_desktop_config.json`):
+Cursor one-click: [Add to Cursor](https://cursor.com/en/install-mcp?name=qutpay&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkBxdXRwYXkvbWNwIl0sImVudiI6eyJRVVRQQVlfQVBJX0tFWSI6InFwX3Rlc3RfLi4uIn19) (then set your key). Cursor / Windsurf / Claude Desktop / VS Code (`mcp.json`, `claude_desktop_config.json`):
 
 ```json
 {
