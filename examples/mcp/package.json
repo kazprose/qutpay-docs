@@ -1,6 +1,6 @@
 {
   "name": "@qutpay/mcp",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "MCP server for Qut Pay — lets AI agents (Claude Code, Cursor, Claude Desktop…) create Kaspi QR invoices, check status, refund and test in sandbox through the Qut Pay API (Kazakhstan).",
   "type": "module",
   "bin": {

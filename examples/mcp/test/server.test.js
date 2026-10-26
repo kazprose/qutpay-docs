@@ -140,3 +140,25 @@ test('client refuses to start without a key; mask() helper', () => {
   assert.throws(() => createClient({ apiKey: '' }), /QUTPAY_API_KEY/);
   assert.equal(mask('key qp_live_ABCDEFGHIJ and whsec_ZZZZZZZZZZ'), 'key qp_live_… and whsec_ZZ…');
 });
+
+test('allowAnonymous: tools are listed, every call answers unauthorized, docs still served', async () => {
+  const log = [];
+  const server = createServer({ apiKey: undefined, allowAnonymous: true, baseUrl: 'https://api.example.test', fetchImpl: fakeFetch(log) });
+  const client = new Client({ name: 'test', version: '0' });
+  const [a, b] = InMemoryTransport.createLinkedPair();
+  await server.connect(a);
+  await client.connect(b);
+  assert.equal((await client.listTools()).tools.length, 9);
+  const r = await client.callTool({ name: 'qutpay_account', arguments: {} });
+  assert.equal(r.isError, true);
+  assert.equal(r.structuredContent.error, 'unauthorized');
+  assert.match(r.structuredContent.message, /Authorization: Bearer/);
+  assert.equal(log.length, 0);
+  assert.match((await client.readResource({ uri: 'qutpay://skill' })).contents[0].text, /qutpay/);
+  await client.close();
+  await server.close();
+});
+
+test('createServer without a key and without allowAnonymous throws', () => {
+  assert.throws(() => createServer({ apiKey: undefined }), /QUTPAY_API_KEY/);
+});

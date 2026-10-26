@@ -8,7 +8,7 @@
     "source": "github",
     "subfolder": "examples/mcp"
   },
-  "version": "0.1.1",
+  "version": "0.1.2",
   "websiteUrl": "https://api.qut.kz/docs/guide/en/mcp",
   "packages": [
     {
@@ -34,6 +34,20 @@
           "isSecret": false,
           "format": "string",
           "default": "https://api.qut.kz"
+        }
+      ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://api.qut.kz/mcp",
+      "headers": [
+        {
+          "name": "Authorization",
+          "description": "Bearer <Qut Pay API key: qp_test_\u2026 sandbox or qp_live_\u2026>",
+          "isRequired": true,
+          "isSecret": true
         }
       ]
     }

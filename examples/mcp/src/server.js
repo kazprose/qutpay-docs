@@ -12,7 +12,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
-export const VERSION = '0.1.1';
+export const VERSION = '0.1.2';
 const DEFAULT_BASE = 'https://api.qut.kz';
 const SECRET_RE = /\b(qp_(?:live|test)_[A-Za-z0-9_-]{6,}|whsec_[A-Za-z0-9_-]{6,})\b/g;
 
@@ -88,7 +88,12 @@ const run = async (fn) => {
 };
 
 const fetchText = async (url, fetchImpl) => {
-  const r = await fetchImpl(url, { headers: { Accept: 'text/markdown, text/plain, application/json' } });
+  let r;
+  try {
+    r = await fetchImpl(url, { headers: { Accept: 'text/markdown, text/plain, application/json' } });
+  } catch (e) {
+    throw new Error(`could not fetch ${url}: ${e.message}`);
+  }
   if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
   return r.text();
 };
@@ -96,9 +101,18 @@ const fetchText = async (url, fetchImpl) => {
 /**
  * Builds the McpServer. `client` can be injected (tests); otherwise it is created from env/options.
  */
-export const createServer = ({ apiKey = process.env.QUTPAY_API_KEY, baseUrl = process.env.QUTPAY_BASE_URL || DEFAULT_BASE, fetchImpl = globalThis.fetch, client } = {}) => {
-  const api = client || createClient({ apiKey, baseUrl, fetchImpl });
-  const docsBase = String(baseUrl).replace(/\/+$/, '').replace(/\/api\/v1$/, '');
+/**
+ * Without a key (remote endpoint scanned by a directory, or a client that forgot the header) the
+ * server still lists tools and serves docs; every tool call answers `unauthorized` with instructions.
+ */
+const anonymousClient = (message) => {
+  const deny = () => Promise.reject(new QutPayApiError(401, 'unauthorized', message));
+  return { isLive: false, mode: 'anonymous', account: deny, status: deny, createInvoice: deny, getInvoice: deny, listInvoices: deny, cancelInvoice: deny, refundInvoice: deny, simulateInvoice: deny, listSubscriptions: deny, getSubscription: deny };
+};
+
+export const createServer = ({ apiKey = process.env.QUTPAY_API_KEY, baseUrl = process.env.QUTPAY_BASE_URL || DEFAULT_BASE, docsUrl, fetchImpl = globalThis.fetch, client, allowAnonymous = false, anonymousMessage = 'No API key: pass Authorization: Bearer qp_test_… (create a key in the Qut Pay cabinet → Integrations → API keys).' } = {}) => {
+  const api = client || (!apiKey && allowAnonymous ? anonymousClient(anonymousMessage) : createClient({ apiKey, baseUrl, fetchImpl }));
+  const docsBase = String(docsUrl || baseUrl).replace(/\/+$/, '').replace(/\/api\/v1$/, '');
   const liveNote = api.isLive ? 'LIVE MODE: this key moves real money. ' : '';
   const server = new McpServer({ name: 'qutpay', version: VERSION }, { instructions: `Qut Pay — Kaspi QR payments for Kazakhstan. Mode of this key: ${api.mode}. Start with qutpay_account. Create invoices with an idempotencyKey per order; the customer pays at payUrl; the merchant's webhook (registered in the cabinet) marks the order paid. In sandbox use qutpay_simulate_payment to complete a test payment. Read resource qutpay://skill for the integration procedure. Never ask the merchant to paste the API key into chat.` });
 

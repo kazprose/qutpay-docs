@@ -28,6 +28,10 @@ Cursor one-click: [Add to Cursor](https://cursor.com/en/install-mcp?name=qutpay&
 
 The key is read only from the environment and is never printed by the server. Optional `QUTPAY_BASE_URL` (default `https://api.qut.kz`).
 
+## Remote (hosted) endpoint
+
+No install: `https://api.qut.kz/mcp` (Streamable HTTP), key in `Authorization: Bearer qp_…`. Claude Code: `claude mcp add --transport http qutpay https://api.qut.kz/mcp --header "Authorization: Bearer qp_test_…"`; Cursor/VS Code `mcp.json`: `{ "url": "https://api.qut.kz/mcp", "headers": { "Authorization": "Bearer qp_test_…" } }`. Without a key the endpoint lists tools and serves docs; tool calls answer `unauthorized`.
+
 ## Tools
 
 | Tool | What it does |
